@@ -1,0 +1,80 @@
+# TASK SPECIFICATION: Multi-Account Investment Portfolio & Tax Tracker (ATO Compliant)
+
+## 1. PURPOSE & OVERVIEW
+Build a high-performance, multi-account share portfolio tracking solution tailored specifically to **Australian Tax Office (ATO) tax and income reporting requirements**. The system must manage equity investments for 1 Parent and 4 Children within a single unified dashboard while keeping legal tax entities strictly segregated.
+
+The application UI must feature a **techy, modern, vibrant, and fun design aesthetic** (e.g., sleek dark mode, glowing neon accents, interactive micro-animations, clean visual hierarchy, and gamified progress indicators).
+
+### Core Functional Capabilities:
+1. **Multi-Account Segregation:** Isolated accounting for Parent vs. Child 1, 2, 3, 4.
+2. **ATO Compliance Engine:** Full tracking of Capital Gains Tax (CGT), Franking Credits, DRPs, and Minor Income Thresholds (Section 102AA).
+3. **Transaction & Corporate Event Ledger:** Buys, Sells, Cash Dividends, Reinvested Dividends (DRP), Capital Returns, and Stock Splits.
+4. **Analytics & Portfolio Intelligence:** Real-time diversification, GICS sector breakdown, asset allocation, and benchmark performance tracking.
+
+---
+
+## 2. AUSTRALIAN TAX & INCOME REPORTING REQUIREMENTS (ATO COMPLIANT)
+
+The calculations must directly map to Australian Individual Tax Return sections (e.g., Items 10, 11, and 18 for Dividends and Capital Gains):
+
+### A. Dividend & Franking Credit Processing (ATO Item 11)
+1. **Franking Credit Calculation:** 
+   $$\text{Franking Credit} = \text{Franked Amount} \times \left(\frac{\text{Company Tax Rate}}{1 - \text{Company Tax Rate}}\right)$$
+   *(Assume 30% standard corporate tax rate or 25% base rate entity as applicable).*
+2. **Grossed-Up Taxable Dividend:**
+   $$\text{Gross Dividend Income} = \text{Unfranked Amount} + \text{Franked Amount} + \text{Franking Credit}$$
+3. **Dividend Reinvestment Plans (DRP):**
+   - DRP dividends are treated as taxable cash income received on payment date **plus** a simultaneous purchase of new shares at the DRP issue price.
+   - Assign new DRP shares a distinct acquisition date and cost base in the tax parcel ledger.
+   - Track residual unallocated cash carried forward per stock.
+
+### B. Capital Gains Tax (CGT) Engine (ATO Item 18)
+1. **Cost Base & Proceeds:**
+   - $\text{Cost Base} = (\text{Units} \times \text{Purchase Price}) + \text{Brokerage Incurred}$.
+   - $\text{Disposal Proceeds} = (\text{Units} \times \text{Sale Price}) - \text{Brokerage Incurred}$.
+2. **50% CGT Discount Rule:**
+   - Automatic detection of asset holding period ($\text{Disposal Date} - \text{Acquisition Date} > 365\text{ days}$).
+   - If held $> 365$ days, flag as eligible for the 50% CGT discount (for Individual/Trust entities).
+3. **Parcel Optimization Selection Methods:**
+   - **FIFO** (First In, First Out)
+   - **LIFO** (Last In, First Out)
+   - **Min-Tax Optimization** (Matches sales against parcels to minimize immediate assessable gain or maximize capital loss utilization).
+4. **Capital Loss Offset Ordering:**
+   - Offset current & carried-forward capital losses against **gross** gains *prior* to applying the 50% CGT discount.
+
+### C. Minor / Child Account Tax Logic (Section 102AA Rules)
+- Support tagging child accounts under two ownership modes:
+  1. **Adult Trustee with Child Designation (TFN attached to Adult):** Dividends taxed at adult's marginal rate, CGT belongs to adult/trustee.
+  2. **Child's Own TFN / Beneficial Ownership:** Track the $416 tax-free threshold for unearned minor income and highlight income exceeding $416 that triggers higher unearned minor tax rates (up to 45% / 66%).
+
+---
+
+## 3. DATA MODEL & SCHEMA REQUIREMENTS
+
+Design a relational database model (or clean multi-table structure) with the following core schema:
+
+### Table 1: `Accounts`
+- `Account_ID` (PK) | `Account_Name` | `Owner_Type` (`Individual`, `Minor_Designated`, `Minor_Direct`) | `TFN_Status`
+
+### Table 2: `Securities_Master`
+- `Ticker` (PK, e.g., VAS.AX, BHP.AX) | `Security_Name` | `GICS_Sector` | `Asset_Class` (`AU Equities`, `Intl Equities`, `REITs`, `Cash`) | `Exchange`
+
+### Table 3: `Transactions_Ledger`
+- `Transaction_ID` (PK) | `Account_ID` (FK) | `Ticker` (FK) | `Type` (`BUY`, `SELL`, `DIVIDEND_CASH`, `DIVIDEND_DRP`, `SPLIT`) | `Trade_Date` | `Units` | `Price` | `Brokerage` | `Total_AUD`
+
+### Table 4: `Dividend_Ledger`
+- `Dividend_ID` (PK) | `Account_ID` (FK) | `Ticker` (FK) | `Payment_Date` | `Unfranked_AUD` | `Franked_AUD` | `Franking_Credits_AUD` | `Is_DRP` | `DRP_Price` | `Residual_Cash_Carried_Forward`
+
+### Table 5: `Tax_Parcel_Ledger`
+- `Parcel_ID` (PK) | `Account_ID` (FK) | `Ticker` (FK) | `Acquisition_Date` | `Units_Remaining` | `Unit_Cost_Base` | `Total_Cost_Base`
+
+---
+
+## 4. UI / UX DESIGN & DASHBOARD VISUALS (TECHY, MODERN & FUN)
+
+### Design Aesthetic:
+- **Style:** Cyber-Fintech / Modern Dark Mode (Deep slate `#0F172A` / dark obsidian backgrounds with vivid neon teal `#00F2FE`, electric blue `#4FACFE`, and vibrant mint green `#10B981` accents).
+- **Vibe:** Sleek, high-tech financial cockpit meets modern gamified app (glassmorphism cards, glowing status pill badges, interactive tooltips, smooth motion cards).
+
+### Dashboard Layout (4 Core Views with Global Account Switcher):
+- **Global Account Selector:** Top bar quick-toggle buttons (`All Accounts Consolidated
